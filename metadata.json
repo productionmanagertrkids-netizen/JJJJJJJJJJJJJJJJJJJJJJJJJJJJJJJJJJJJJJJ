@@ -1,0 +1,5 @@
+{
+  "name": "Production Flow AI",
+  "description": "Production tracking dashboard with Excel-like data import, visualization, and AI-driven performance analysis.",
+  "requestFramePermissions": []
+}
