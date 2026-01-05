@@ -2,7 +2,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProductionJob, AnalysisResult } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// ใน Production จริงบนเครื่องคอมพิวเตอร์ (Vite) จะใช้ import.meta.env.VITE_API_KEY
+// ในที่นี้เราจะตรวจสอบทั้งสองทางเพื่อให้รันได้ทุกที่
+const API_KEY = (import.meta as any).env?.VITE_API_KEY || process.env.API_KEY;
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 export const analyzeProductionData = async (jobs: ProductionJob[]): Promise<AnalysisResult> => {
   try {
@@ -24,7 +27,6 @@ export const analyzeProductionData = async (jobs: ProductionJob[]): Promise<Anal
       3. "recommendations": An array of strings suggesting improvements. Group recommendations by process if applicable.
     `;
 
-    // Updated model to 'gemini-3-flash-preview' for basic text tasks as per requirements
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -55,7 +57,7 @@ export const analyzeProductionData = async (jobs: ProductionJob[]): Promise<Anal
     return {
       summary: "ไม่สามารถวิเคราะห์ข้อมูลได้ในขณะนี้",
       efficiency: "N/A",
-      recommendations: ["ตรวจสอบ API Key หรือลองใหม่อีกครั้ง"]
+      recommendations: ["ตรวจสอบ API Key ในไฟล์ .env หรือลองใหม่อีกครั้ง"]
     };
   }
 };
