@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProductionJob, AnalysisResult } from "../types";
 
@@ -23,8 +24,9 @@ export const analyzeProductionData = async (jobs: ProductionJob[]): Promise<Anal
       3. "recommendations": An array of strings suggesting improvements. Group recommendations by process if applicable.
     `;
 
+    // Updated model to 'gemini-3-flash-preview' for basic text tasks as per requirements
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

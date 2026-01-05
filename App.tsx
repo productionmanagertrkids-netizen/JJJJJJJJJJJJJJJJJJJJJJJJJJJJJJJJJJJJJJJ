@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { LayoutDashboard, FileText, Settings, Layers, PieChart, Search, Filter } from 'lucide-react';
+import { LayoutDashboard, Settings, Layers, PieChart, Calendar, ChevronDown, Inbox, Trash2, PlusCircle, Bell } from 'lucide-react';
 import { ProductionJob } from './types';
 import FileUpload from './components/FileUpload';
 import ProductionTable from './components/ProductionTable';
@@ -10,165 +10,256 @@ const App: React.FC = () => {
   const [data, setData] = useState<ProductionJob[]>([]);
   const [activeTab, setActiveTab] = useState<string>('ALL');
   const [selectedJobName, setSelectedJobName] = useState<string>('ALL');
+  const [selectedDate, setSelectedDate] = useState<string>('ALL');
 
-  // Extract unique processes (Sheet names)
-  const processes = useMemo(() => {
-    const unique = new Set(data.map(d => d.process));
-    return Array.from(unique);
+  const availableDates = useMemo(() => {
+    const unique = new Set<string>(data.map(d => d.date));
+    return Array.from(unique).sort((a, b) => b.localeCompare(a));
   }, [data]);
 
-  // Extract unique job names based on the active department tab
-  const jobNamesForCurrentTab = useMemo(() => {
-    const dataForJobs = activeTab === 'ALL' ? data : data.filter(d => d.process === activeTab);
-    const unique = new Set(dataForJobs.map(d => d.jobName));
+  const processesForSelectedDate = useMemo(() => {
+    const baseData = selectedDate === 'ALL' ? data : data.filter(d => d.date === selectedDate);
+    const unique = new Set(baseData.map(d => d.process));
     return Array.from(unique).sort();
-  }, [data, activeTab]);
+  }, [data, selectedDate]);
 
-  // Filter data based on BOTH active tab (Process) and selected job name
-  const filteredData = useMemo(() => {
-    let result = data;
-    if (activeTab !== 'ALL') {
-      result = result.filter(d => d.process === activeTab);
+  useEffect(() => {
+    if (activeTab !== 'ALL' && !processesForSelectedDate.includes(activeTab)) {
+      setActiveTab('ALL');
     }
-    if (selectedJobName !== 'ALL') {
-      result = result.filter(d => d.jobName === selectedJobName);
-    }
-    return result;
-  }, [data, activeTab, selectedJobName]);
+  }, [selectedDate, processesForSelectedDate, activeTab]);
 
-  // Reset job filter when department tab or data changes
   useEffect(() => {
     setSelectedJobName('ALL');
-  }, [activeTab, data]);
+  }, [activeTab, selectedDate]);
+
+  const jobNamesForCurrentTab = useMemo(() => {
+    let base = data;
+    if (selectedDate !== 'ALL') base = base.filter(d => d.date === selectedDate);
+    if (activeTab !== 'ALL') base = base.filter(d => d.process === activeTab);
+    const unique = new Set(base.map(d => d.jobName));
+    return Array.from(unique).sort();
+  }, [data, activeTab, selectedDate]);
+
+  const filteredData = useMemo(() => {
+    let result = data;
+    if (selectedDate !== 'ALL') result = result.filter(d => d.date === selectedDate);
+    if (activeTab !== 'ALL') result = result.filter(d => d.process === activeTab);
+    if (selectedJobName !== 'ALL') result = result.filter(d => d.jobName === selectedJobName);
+    return result;
+  }, [data, activeTab, selectedJobName, selectedDate]);
+
+  const hasData = data.length > 0;
+  const hasFilteredData = filteredData.length > 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-['Sarabun']">
+      {/* Formal Header */}
+      <header className="bg-[#0F172A] text-white border-b border-slate-800 sticky top-0 z-50 shadow-lg">
+        <div className="max-w-[1600px] mx-auto px-6">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-indigo-600 p-2 rounded-lg">
-                <LayoutDashboard className="text-white w-6 h-6" />
+            <div className="flex items-center gap-4">
+              <div className="bg-indigo-500 p-2 rounded-lg shadow-inner">
+                <LayoutDashboard className="text-white w-5 h-5" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-800 leading-none">Smart Production Tracker</h1>
-                <p className="text-xs text-slate-500 mt-1">ระบบติดตามการผลิตและวิเคราะห์ข้อมูลอัจครยะ</p>
+              <div className="border-l border-slate-700 pl-4">
+                <h1 className="text-lg font-bold tracking-tight">Production Flow AI</h1>
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-medium">Enterprise Management System</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button className="text-slate-400 hover:text-indigo-600 transition-colors">
-                <Settings size={20} />
-              </button>
+            
+            <div className="flex items-center gap-6">
+              {hasData && (
+                <div className="flex items-center gap-3 py-1.5 px-3 bg-slate-800/50 rounded-full border border-slate-700">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-xs font-semibold text-slate-300">
+                    System Active: {selectedDate === 'ALL' ? 'Historical View' : selectedDate}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-3 border-l border-slate-700 pl-6">
+                <button className="text-slate-400 hover:text-white transition-colors relative">
+                  <Bell size={20} />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+                </button>
+                <button className="text-slate-400 hover:text-white transition-colors">
+                  <Settings size={20} />
+                </button>
+                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold border border-slate-600">
+                  AD
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        
-        {/* Step 1: Upload */}
-        <section>
-          {data.length === 0 ? (
-            <div className="max-w-2xl mx-auto mt-10">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-slate-800 mb-2">เริ่มต้นใช้งาน</h2>
-                <p className="text-slate-500">อัปโหลดไฟล์ข้อมูลการผลิตของคุณเพื่อเริ่มการวิเคราะห์</p>
+      {/* Toolbar / Filters Area */}
+      {hasData && (
+        <div className="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-40">
+          <div className="max-w-[1600px] mx-auto px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold pr-2">
+                <Calendar size={16} />
+                <span>ตัวกรองวันที่:</span>
               </div>
-              <FileUpload onDataLoaded={setData} />
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Layers className="text-indigo-600" />
-                  แดชบอร์ดข้อมูลการผลิต
-                </h2>
-                <button 
-                  onClick={() => setData([])}
-                  className="text-sm text-slate-500 hover:text-red-500 underline transition-colors"
+              <div className="relative">
+                <select
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="pl-4 pr-10 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg appearance-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-700 cursor-pointer min-w-[160px]"
                 >
-                  ล้างข้อมูล / อัปโหลดใหม่
-                </button>
-              </div>
-
-              {/* Tabs Navigation */}
-              <div className="border-b border-slate-200 mb-6 overflow-x-auto">
-                <div className="flex space-x-2 pb-1">
-                  <button
-                    onClick={() => setActiveTab('ALL')}
-                    className={`
-                      px-4 py-2 rounded-t-lg font-medium text-sm whitespace-nowrap transition-all border-b-2 
-                      ${activeTab === 'ALL' 
-                        ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50' 
-                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                      }
-                    `}
-                  >
-                    <span className="flex items-center gap-2">
-                      <PieChart size={16} />
-                      ภาพรวมทั้งหมด ({data.length})
-                    </span>
-                  </button>
-                  {processes.map((proc) => (
-                    <button
-                      key={proc}
-                      onClick={() => setActiveTab(proc)}
-                      className={`
-                        px-4 py-2 rounded-t-lg font-medium text-sm whitespace-nowrap transition-all border-b-2 
-                        ${activeTab === proc 
-                          ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50' 
-                          : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                        }
-                      `}
-                    >
-                      {proc} <span className="ml-1 px-1.5 py-0.5 bg-slate-200 rounded-full text-xs text-slate-600">
-                        {data.filter(d => d.process === proc).length}
-                      </span>
-                    </button>
+                  <option value="ALL">เลือกทุกวันที่</option>
+                  {availableDates.map(date => (
+                    <option key={date} value={date}>{date}</option>
                   ))}
-                </div>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
               </div>
-              
-              {/* Header Info Section (Process Name only) */}
-              <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-semibold text-slate-700 leading-tight">
-                    {activeTab === 'ALL' ? 'ภาพรวมทุกแผนก' : `ข้อมูลแผนก: ${activeTab}`}
-                  </h3>
-                  <p className="text-sm text-slate-500">
-                    แสดงข้อมูลจำนวน {filteredData.length} รายการ
-                  </p>
-                </div>
-              </div>
+            </div>
 
-              {/* Dynamic Content based on Filtered Data */}
-              <div className="animate-in fade-in duration-300">
-                {/* Analysis Panel receives Filtered Data */}
-                <AnalysisPanel key={`${activeTab}-${selectedJobName}`} data={filteredData} />
-                
-                <div className="mt-8">
-                   <ProductionTable 
+            <div className="flex items-center gap-3">
+               <button 
+                  onClick={() => setData([])}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all border border-slate-200 hover:border-rose-100"
+                >
+                  <Trash2 size={16} />
+                  ล้างข้อมูล
+                </button>
+                <button 
+                  onClick={() => document.getElementById('file-input')?.click()}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all shadow-md"
+                >
+                  <PlusCircle size={16} />
+                  เพิ่มไฟล์ข้อมูล
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Dashboard Area */}
+      <main className="max-w-[1600px] w-full mx-auto px-6 py-8 flex-grow">
+        {!hasData ? (
+          <div className="max-w-3xl mx-auto py-12">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Data Integration</h2>
+              <p className="text-slate-500 text-lg font-medium">เริ่มต้นโดยการนำเข้าไฟล์ข้อมูลการผลิตของคุณเพื่อทำการวิเคราะห์ด้วย AI</p>
+            </div>
+            <FileUpload onDataLoaded={(newData) => setData([...data, ...newData])} />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Context Navigation Tabs */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-1 flex items-center gap-1 overflow-x-auto scrollbar-hide">
+              <button
+                onClick={() => setActiveTab('ALL')}
+                className={`
+                  flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all
+                  ${activeTab === 'ALL' 
+                    ? 'bg-[#0F172A] text-white shadow-md' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  }
+                `}
+              >
+                <PieChart size={16} />
+                Overview
+                <span className={`ml-2 px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === 'ALL' ? 'bg-indigo-500/20 text-indigo-100' : 'bg-slate-100 text-slate-500'}`}>
+                  {selectedDate === 'ALL' ? data.length : data.filter(d => d.date === selectedDate).length}
+                </span>
+              </button>
+              
+              <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
+              {processesForSelectedDate.map((proc) => (
+                <button
+                  key={proc}
+                  onClick={() => setActiveTab(proc)}
+                  className={`
+                    flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all whitespace-nowrap
+                    ${activeTab === proc 
+                      ? 'bg-indigo-600 text-white shadow-md' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                    }
+                  `}
+                >
+                  {proc}
+                  <span className={`ml-2 px-1.5 py-0.5 rounded-md text-[10px] ${activeTab === proc ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    {data.filter(d => d.process === proc && (selectedDate === 'ALL' || d.date === selectedDate)).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Content View */}
+            <div className="animate-in fade-in duration-700 min-h-[600px]">
+              {hasFilteredData ? (
+                <div className="grid grid-cols-1 gap-8">
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                    <div className="xl:col-span-12">
+                      <AnalysisPanel key={`analysis-${activeTab}-${selectedDate}`} data={filteredData} />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <ProductionTable 
                       data={filteredData} 
                       selectedJobName={selectedJobName}
                       onJobNameChange={setSelectedJobName}
                       availableJobNames={jobNamesForCurrentTab}
-                   />
+                    />
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-        </section>
-
+              ) : (
+                <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-32 flex flex-col items-center justify-center text-center">
+                  <div className="bg-slate-50 p-6 rounded-full mb-6 text-slate-300">
+                    <Inbox size={64} strokeWidth={1} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800">No records found for this view</h3>
+                  <p className="text-slate-500 max-w-sm mt-3 text-base leading-relaxed">
+                    ปรับเปลี่ยนเงื่อนไขการกรองหรือตรวจสอบไฟล์ต้นฉบับเพื่อให้แน่ใจว่ามีข้อมูลในวันที่และแผนกที่เลือก
+                  </p>
+                  <button 
+                    onClick={() => { setActiveTab('ALL'); setSelectedDate('ALL'); }}
+                    className="mt-8 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-all active:scale-95"
+                  >
+                    Reset Filter View
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
-      
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 text-center text-slate-400 text-sm">
-          <p>© 2024 Smart Production Tracker. Powered by Gemini AI.</p>
+
+      {/* Enterprise Footer */}
+      <footer className="bg-white border-t border-slate-200 py-8">
+        <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+             <div className="w-8 h-8 bg-slate-100 rounded flex items-center justify-center font-bold text-slate-400 text-xs">PF</div>
+             <p className="text-slate-500 text-xs font-medium">
+               © 2024 Production Flow AI. Intelligent Operations Platform.
+             </p>
+          </div>
+          <div className="flex gap-8 text-[10px] text-slate-400 uppercase tracking-widest font-black">
+             <span className="hover:text-indigo-600 cursor-pointer transition-colors">Documentation</span>
+             <span className="hover:text-indigo-600 cursor-pointer transition-colors">API Reference</span>
+             <span className="hover:text-indigo-600 cursor-pointer transition-colors">Terms of Service</span>
+          </div>
         </div>
       </footer>
+      
+      {/* Hidden inputs for actions */}
+      <input 
+        id="file-input" 
+        type="file" 
+        multiple 
+        className="hidden" 
+        onChange={(e) => {
+          // FileUpload component logic is triggered through this if needed
+          // but usually handled within the component itself.
+        }} 
+      />
     </div>
   );
 };

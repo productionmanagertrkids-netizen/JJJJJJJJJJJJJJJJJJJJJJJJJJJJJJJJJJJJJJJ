@@ -1,3 +1,4 @@
+
 export interface ProductionJob {
   id: number;           // ลำดับ
   jobName: string;      // ชื่อใบงาน (e.g., SPTR-161268-R5)
@@ -10,6 +11,7 @@ export interface ProductionJob {
   planFinish: string;   // แผนเสร็จ
   actualStart: string;  // เริ่มจริง
   actualFinish: string; // เสร็จจริง
+  date: string;         // วันที่ (YYYY-MM-DD)
 }
 
 export interface AnalysisResult {
